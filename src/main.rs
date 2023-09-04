@@ -34,14 +34,14 @@ struct Message {
 struct Choice {
     index: u64,
     message: Message,
-    finish_reason: String // could be more strongly typed
+    finish_reason: String, // could be more strongly typed
 }
 
 #[derive(Serialize, Deserialize)]
 struct UsageInfo {
     prompt_tokens: u64,
     completion_tokens: u64,
-    total_tokens: u64
+    total_tokens: u64,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -51,7 +51,7 @@ struct SuccessfullConversationResponse {
     created: u64,
     model: String,
     choices: Vec<Choice>,
-    usage: UsageInfo 
+    usage: UsageInfo,
 }
 
 #[derive(Serialize)]
@@ -68,8 +68,7 @@ fn ask_one(
     temperature: Option<f64>,
 ) -> Result<String, reqwest::Error> {
     let err_str = format!("The enviroment variable {} was not set. Please, set the {} enviroment variable: (e.g. \n\texport {}=\"<KEY>\"", API_KEY_ENV_NAME, API_KEY_ENV_NAME, API_KEY_ENV_NAME);
-    let api_key = env::var(API_KEY_ENV_NAME)
-        .expect(&err_str);
+    let api_key = env::var(API_KEY_ENV_NAME).expect(&err_str);
 
     let model = match model {
         Some(m) => m,
@@ -104,7 +103,7 @@ fn ask_one(
         Err(e) => {
             println!("{}", e);
             return Err(e);
-        },
+        }
     };
 }
 
@@ -123,25 +122,22 @@ struct Args {
 
 fn main() -> serde_json::Result<()> {
     let args = Args::parse();
-    let (question, temperature ) = (args.question, args.temperature);
+    let (question, temperature) = (args.question, args.temperature);
 
-    let response = ask_one(
-        Some(Model::Gpt3_5Turbo),
-        question,
-        Some(temperature),
-    ).unwrap();
+    let response = ask_one(Some(Model::Gpt3_5Turbo), question, Some(temperature)).unwrap();
 
-    let successfull_response: SuccessfullConversationResponse = 
-    serde_json::from_str(&response).unwrap();
+    let successfull_response: SuccessfullConversationResponse =
+        serde_json::from_str(&response).unwrap();
 
-    let text_response = successfull_response.choices
-    .get(0)
-    .expect("[There were no response]");
+    let text_response = successfull_response
+        .choices
+        .get(0)
+        .expect("[There were no response]");
 
     let m = &text_response.message.content;
     let n = m.clone();
 
     println!("{}", n);
-            
+
     return Ok(());
 }
