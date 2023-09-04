@@ -1,7 +1,7 @@
-use serde::{Serialize, Deserialize};
 use clap::Parser;
+use serde::{Deserialize, Serialize};
+use std::env;
 
-const OPENAI_API_KEY: &str = "<API_KEY>";
 const OPENAI_COMPLETIONS_URL: &str = "https://api.openai.com/v1/chat/completions";
 const DEFAULT_TEMPERATURE: f64 = 0.7;
 const DEFAULT_MODEL: Model = Model::Gpt3_5Turbo;
@@ -61,11 +61,16 @@ struct OpenAiConversationRequest {
     temperature: f64,
 }
 
+const API_KEY_ENV_NAME: &str = "OPENAI_API_KEY";
 fn ask_one(
     model: Option<Model>,
     message: String,
     temperature: Option<f64>,
 ) -> Result<String, reqwest::Error> {
+    let err_str = format!("The enviroment variable {} was not set. Please, set the {} enviroment variable: (e.g. \n\texport {}=\"<KEY>\"", API_KEY_ENV_NAME, API_KEY_ENV_NAME, API_KEY_ENV_NAME);
+    let api_key = env::var(API_KEY_ENV_NAME)
+        .expect(&err_str);
+
     let model = match model {
         Some(m) => m,
         None => DEFAULT_MODEL,
@@ -89,7 +94,7 @@ fn ask_one(
 
     let body = client
         .post(OPENAI_COMPLETIONS_URL)
-        .bearer_auth(OPENAI_API_KEY)
+        .bearer_auth(api_key)
         .json(&openai_request)
         .send()?
         .text();
