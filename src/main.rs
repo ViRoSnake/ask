@@ -62,11 +62,18 @@ struct OpenAiConversationRequest {
 }
 
 const API_KEY_ENV_NAME: &str = "OPENAI_API_KEY";
+enum AskError {
+    RequestError(reqwest::Error),
+    WrongApiKey, // TODO: catch that case after getting result & error on successfull parsing
+    NotEnoughtCredit, // TODO: catch that case after getting result & error on successfull parsing
+    ParsingError(serde_json::Error),
+}
+
 fn ask_one(
     model: Option<Model>,
     message: String,
     temperature: Option<f64>,
-) -> Result<String, reqwest::Error> {
+) -> Result<SuccessfullConversationResponse, AskError> {
     let err_str = format!("The enviroment variable {} was not set. Please, set the {} enviroment variable: (e.g. \n\texport {}=\"<KEY>\"", API_KEY_ENV_NAME, API_KEY_ENV_NAME, API_KEY_ENV_NAME);
     let api_key = env::var(API_KEY_ENV_NAME).expect(&err_str);
 
@@ -95,15 +102,21 @@ fn ask_one(
         .post(OPENAI_COMPLETIONS_URL)
         .bearer_auth(api_key)
         .json(&openai_request)
-        .send()?
-        .text();
+        .send();
 
     match body {
-        Ok(s) => return Ok(s),
-        Err(e) => {
-            println!("{}", e);
-            return Err(e);
+        Ok(res) => {
+            let text = match res.text() {
+                Ok(str) => str,
+                Err(e) => return Err(AskError::RequestError(e)),
+            };
+
+            match serde_json::from_str::<SuccessfullConversationResponse>(&text) {
+                Ok(response) => return Ok(response),
+                Err(parsing_error) => return Err(AskError::ParsingError(parsing_error)),
+            }
         }
+        Err(e) => return Err(AskError::RequestError(e)),
     };
 }
 
@@ -124,20 +137,27 @@ fn main() -> serde_json::Result<()> {
     let args = Args::parse();
     let (question, temperature) = (args.question, args.temperature);
 
-    let response = ask_one(Some(Model::Gpt3_5Turbo), question, Some(temperature)).unwrap();
+    let response = ask_one(Some(Model::Gpt3_5Turbo), question, Some(temperature));
 
-    let successfull_response: SuccessfullConversationResponse =
-        serde_json::from_str(&response).unwrap();
+    let successfull = match response {
+        Ok(res) => res,
+        Err(e) => match e {
+            AskError::ParsingError(err) => {
+                println!("Parsing error: {}", err);
+                panic!("<Parsing error>");
+            }
+            _ => {
+                panic!("<Default error>")
+            } // TODO: more error handling
+        },
+    };
 
-    let text_response = successfull_response
+    let text_response = successfull
         .choices
         .get(0)
         .expect("[There were no response]");
 
-    let m = &text_response.message.content;
-    let n = m.clone();
-
-    println!("{}", n);
+    println!("{}", text_response.message.content);
 
     return Ok(());
 }
