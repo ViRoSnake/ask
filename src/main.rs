@@ -28,7 +28,8 @@ fn main() -> serde_json::Result<()> {
                 panic!("<Parsing error>");
             }
             _ => {
-                panic!("<Default error>")
+                dbg!("Uncaught error: {}", e);
+                panic!("<Default error>");
             } // TODO: more error handling
         },
     };

@@ -1,5 +1,6 @@
 use clap::Parser;
 use serde::{Deserialize, Serialize};
+use core::fmt;
 use std::env;
 
 const OPENAI_COMPLETIONS_URL: &str = "https://api.openai.com/v1/chat/completions";
@@ -67,6 +68,15 @@ pub enum AskError {
     WrongApiKey, // TODO: catch that case after getting result & error on successfull parsing
     NotEnoughtCredit, // TODO: catch that case after getting result & error on successfull parsing
     ParsingError(serde_json::Error),
+}
+impl fmt::Debug for AskError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match &self {
+            AskError::RequestError(re) => write!(f, "{}", re),
+            AskError::ParsingError(pe) => write!(f, "{}", pe),
+            _ => write!(f, "{}", "<default error>") 
+        }
+    }
 }
 
 pub fn ask_one(
