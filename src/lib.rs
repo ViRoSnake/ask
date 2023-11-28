@@ -84,8 +84,25 @@ pub fn ask_one(
     message: String,
     temperature: Option<f64>,
 ) -> Result<SuccessfullConversationResponse, AskError> {
-    let err_str = format!("The enviroment variable {} was not set. Please, set the {} enviroment variable: (e.g. \n\texport {}=\"<KEY>\"", API_KEY_ENV_NAME, API_KEY_ENV_NAME, API_KEY_ENV_NAME);
-    let api_key = env::var(API_KEY_ENV_NAME).expect(&err_str);
+    
+
+    let messages = vec![
+        Message {
+            content: message,
+            role: Role::User,
+        },
+    ];
+
+    return send_to_open_ai(None, model, temperature, messages)
+}
+
+fn send_to_open_ai(api_key: Option<String>, model: Option<Model>, temperature: Option<f64>, messages: Vec<Message>) -> Result<SuccessfullConversationResponse, AskError> {
+    let api_key = api_key.unwrap_or_else(|| env::var(API_KEY_ENV_NAME)
+                                 // If API key not provided, try to read it from the env variable
+                                 .expect(&format!(
+                                         "The enviroment variable {} was not set. Please, set the {} enviroment variable: (e.g. \n\texport {}=\"<KEY>\"",
+                                         API_KEY_ENV_NAME, API_KEY_ENV_NAME, API_KEY_ENV_NAME))
+                                 );
 
     let model = match model {
         Some(m) => m,
@@ -97,17 +114,13 @@ pub fn ask_one(
         None => DEFAULT_TEMPERATURE,
     };
 
-    let client = reqwest::blocking::Client::new();
-
     let openai_request = OpenAiConversationRequest {
         model,
         temperature,
-        messages: vec![Message {
-            content: message,
-            role: Role::User,
-        }],
+        messages,
     };
 
+    let client = reqwest::blocking::Client::new();
     let body = client
         .post(OPENAI_COMPLETIONS_URL)
         .bearer_auth(api_key)
@@ -128,4 +141,29 @@ pub fn ask_one(
         }
         Err(e) => return Err(AskError::RequestError(e)),
     };
+}
+
+
+const CLI_ASKING_PREMESSAGE: &str = "You are the console application that generates propositions for calling command line applications based on user request. You should answer the user just with one line of script that, as you think, the most fittingly does what user requested. DO NOT add some sort of comments, explanations etc. Just the described script.";
+
+pub fn ask_cli(
+    model: Option<Model>,
+    description: String,
+    temperature: Option<f64>,
+) -> Result<SuccessfullConversationResponse, AskError> {
+
+    let system_message: Message = Message {
+        content: CLI_ASKING_PREMESSAGE.to_string(),
+        role: Role::System,
+    };
+    
+    let messages = vec![
+        system_message,
+        Message {
+            content: description,
+            role: Role::User,
+        },
+    ];
+
+    return send_to_open_ai(None, model, temperature, messages)
 }
