@@ -1,5 +1,5 @@
 use clap::Parser;
-use serde::{Deserialize, Serialize};
+
 use ask::{ask_one, AskError, Model};
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
