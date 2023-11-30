@@ -1,6 +1,6 @@
 use clap::Parser;
 
-use ask::{ask_one, ask_cli, AskError, Model};
+use ask::{ask_cli, ask_one, AskError, Model};
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
@@ -29,7 +29,11 @@ fn main() -> serde_json::Result<()> {
     // TODO: make some state machine
     let response = match cli {
         Some(description) => ask_cli(Some(Model::Gpt3_5Turbo), description, Some(temperature)),
-        None => ask_one(Some(Model::Gpt3_5Turbo), question.unwrap(), Some(temperature)),
+        None => ask_one(
+            Some(Model::Gpt3_5Turbo),
+            question.unwrap(),
+            Some(temperature),
+        ),
     };
 
     let successfull = match response {

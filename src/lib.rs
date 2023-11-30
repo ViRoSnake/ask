@@ -1,6 +1,5 @@
-
-use serde::{Deserialize, Serialize};
 use core::fmt;
+use serde::{Deserialize, Serialize};
 use std::env;
 
 const OPENAI_COMPLETIONS_URL: &str = "https://api.openai.com/v1/chat/completions";
@@ -74,7 +73,7 @@ impl fmt::Debug for AskError {
         match &self {
             AskError::RequestError(re) => write!(f, "{}", re),
             AskError::ParsingError(pe) => write!(f, "{}", pe),
-            _ => write!(f, "{}", "<default error>") 
+            _ => write!(f, "{}", "<default error>"),
         }
     }
 }
@@ -84,19 +83,20 @@ pub fn ask_one(
     message: String,
     temperature: Option<f64>,
 ) -> Result<SuccessfullConversationResponse, AskError> {
-    
+    let messages = vec![Message {
+        content: message,
+        role: Role::User,
+    }];
 
-    let messages = vec![
-        Message {
-            content: message,
-            role: Role::User,
-        },
-    ];
-
-    return send_to_open_ai(None, model, temperature, messages)
+    return send_to_open_ai(None, model, temperature, messages);
 }
 
-fn send_to_open_ai(api_key: Option<String>, model: Option<Model>, temperature: Option<f64>, messages: Vec<Message>) -> Result<SuccessfullConversationResponse, AskError> {
+fn send_to_open_ai(
+    api_key: Option<String>,
+    model: Option<Model>,
+    temperature: Option<f64>,
+    messages: Vec<Message>,
+) -> Result<SuccessfullConversationResponse, AskError> {
     let api_key = api_key.unwrap_or_else(|| env::var(API_KEY_ENV_NAME)
                                  // If API key not provided, try to read it from the env variable
                                  .expect(&format!(
@@ -143,7 +143,6 @@ fn send_to_open_ai(api_key: Option<String>, model: Option<Model>, temperature: O
     };
 }
 
-
 const CLI_ASKING_PREMESSAGE: &str = "You are the console application that generates propositions for calling command line applications based on user request. You should answer the user just with one line of script that, as you think, the most fittingly does what user requested. DO NOT add some sort of comments, explanations etc. Just the described script.";
 
 pub fn ask_cli(
@@ -151,12 +150,11 @@ pub fn ask_cli(
     description: String,
     temperature: Option<f64>,
 ) -> Result<SuccessfullConversationResponse, AskError> {
-
     let system_message: Message = Message {
         content: CLI_ASKING_PREMESSAGE.to_string(),
         role: Role::System,
     };
-    
+
     let messages = vec![
         system_message,
         Message {
@@ -165,5 +163,5 @@ pub fn ask_cli(
         },
     ];
 
-    return send_to_open_ai(None, model, temperature, messages)
+    return send_to_open_ai(None, model, temperature, messages);
 }
