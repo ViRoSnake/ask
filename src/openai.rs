@@ -38,7 +38,6 @@ pub fn ask_sync(
     };
 }
 
-
 #[derive(Serialize, Clone)]
 pub enum Model {
     #[serde(rename = "gpt-3.5-turbo")]
@@ -63,7 +62,7 @@ impl std::str::FromStr for Model {
             "3.5-turbo" => Ok(Model::Gpt3_5Turbo),
             "3_5" => Ok(Model::Gpt3_5Turbo),
             "3_5_turbo" => Ok(Model::Gpt3_5Turbo),
-            _ => Err("No such model yet supported")
+            _ => Err("No such model yet supported"),
         }
     }
 }

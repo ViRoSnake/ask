@@ -1,8 +1,8 @@
 use std::env;
 
-use clap::Parser;
-use ask::{ask_cli, ask_question_sync};
 use ask::openai::{AskError, Model};
+use ask::{ask_cli, ask_question_sync};
+use clap::Parser;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -31,7 +31,13 @@ struct Args {
 const API_KEY_ENV_NAME: &str = "OPENAI_API_KEY";
 fn main() -> serde_json::Result<()> {
     let args = Args::parse();
-    let (question, temperature, cli, key, model) = (args.question, args.temperature, args.cli, args.key, args.model);
+    let (question, temperature, cli, key, model) = (
+        args.question,
+        args.temperature,
+        args.cli,
+        args.key,
+        args.model,
+    );
 
     if question.is_none() && cli.is_none() {
         panic!("Provide either --question or --cli argument to the program")
@@ -45,13 +51,13 @@ fn main() -> serde_json::Result<()> {
     // Currently, only two modes of work w/ priority to the cli command
     // TODO: make some state machine
     let response = match cli {
-        Some(description) => ask_cli(api_key, Some(Model::Gpt3_5Turbo), description, Some(temperature)),
-        None => ask_question_sync(
+        Some(description) => ask_cli(
             api_key,
-            model,
-            question.unwrap(),
+            Some(Model::Gpt3_5Turbo),
+            description,
             Some(temperature),
         ),
+        None => ask_question_sync(api_key, model, question.unwrap(), Some(temperature)),
     };
 
     let successfull = match response {

@@ -1,5 +1,5 @@
 pub mod openai;
-use crate::openai::{ask_sync, SuccessfullConversationResponse, AskError, Message, Model, Role, };
+use crate::openai::{ask_sync, AskError, Message, Model, Role, SuccessfullConversationResponse};
 
 const DEFAULT_TEMPERATURE: f64 = 0.7;
 const DEFAULT_MODEL: Model = Model::Gpt3_5Turbo;
@@ -11,14 +11,14 @@ fn default_ask(
 ) -> Result<SuccessfullConversationResponse, AskError> {
     let model = match model {
         Some(m) => m,
-        None => DEFAULT_MODEL
+        None => DEFAULT_MODEL,
     };
 
     let temperature = match temperature {
         Some(t) => t,
-        None => DEFAULT_TEMPERATURE
+        None => DEFAULT_TEMPERATURE,
     };
-    return ask_sync(api_key, model, temperature, messages)
+    return ask_sync(api_key, model, temperature, messages);
 }
 pub fn ask_question_sync(
     api_key: String,
@@ -54,5 +54,5 @@ pub fn ask_cli(
         },
     ];
 
-    return default_ask(api_key, model, messages, temperature );
+    return default_ask(api_key, model, messages, temperature);
 }
