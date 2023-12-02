@@ -1,9 +1,16 @@
-use clap::Parser;
+use std::env;
 
-use ask::{ask_cli, ask_one, AskError, Model};
+use clap::Parser;
+use ask::{ask_cli, ask_question_sync};
+use ask::openai::{AskError, Model};
+
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Args {
+    /// OpenAI API key. If not included, the program will try to read OPENAI_API_KEY enviroment variable
+    #[arg(short, long)]
+    key: Option<String>,
+
     /// Question to ask GTP
     #[arg(short, long)]
     question: Option<String>,
@@ -15,22 +22,33 @@ struct Args {
     ///
     #[arg(short, long)]
     cli: Option<String>,
+
+    ///
+    #[arg(short, long)]
+    model: Option<Model>,
 }
 
+const API_KEY_ENV_NAME: &str = "OPENAI_API_KEY";
 fn main() -> serde_json::Result<()> {
     let args = Args::parse();
-    let (question, temperature, cli) = (args.question, args.temperature, args.cli);
+    let (question, temperature, cli, key, model) = (args.question, args.temperature, args.cli, args.key, args.model);
 
     if question.is_none() && cli.is_none() {
         panic!("Provide either --question or --cli argument to the program")
     }
+    let api_key: String = match key {
+        Some(k) => k,
+        None => env::var(API_KEY_ENV_NAME)
+        .expect("OpenAI key was not provided neither as an argument, nor as an enviroment variable OPENAI_API_KEY")
+    };
 
     // Currently, only two modes of work w/ priority to the cli command
     // TODO: make some state machine
     let response = match cli {
-        Some(description) => ask_cli(Some(Model::Gpt3_5Turbo), description, Some(temperature)),
-        None => ask_one(
-            Some(Model::Gpt3_5Turbo),
+        Some(description) => ask_cli(api_key, Some(Model::Gpt3_5Turbo), description, Some(temperature)),
+        None => ask_question_sync(
+            api_key,
+            model,
             question.unwrap(),
             Some(temperature),
         ),
