@@ -1,5 +1,5 @@
 use core::fmt;
-use std::clone;
+
 use serde::{Deserialize, Serialize};
 
 const OPENAI_COMPLETIONS_URL: &str = "https://api.openai.com/v1/chat/completions";
